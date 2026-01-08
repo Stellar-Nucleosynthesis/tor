@@ -969,6 +969,7 @@ handle_get_current_consensus(dir_connection_t *conn,
   }
 
   /* Success: we are going to try serving it. */
+  geoip_note_ns_response(GEOIP_SERVED);
   conn->should_count_geoip_when_finished = 1;
 
   tor_addr_t addr;

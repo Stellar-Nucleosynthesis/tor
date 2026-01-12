@@ -182,7 +182,12 @@ sendme_is_valid(const circuit_t *circ, const uint8_t *cell_payload,
   }
 
   /* Validate that we can handle this cell version. */
-  if (!cell_version_can_be_handled(cell_version)) {
+  if (CIRCUIT_IS_ORCIRC(circ) &&
+      CONST_TO_OR_CIRCUIT(circ)->used_legacy_circuit_handshake &&
+      cell_version == 0) {
+    /* exception, allow v0 sendmes on circuits made with CREATE_FAST */
+    log_info(LD_CIRC, "Permitting sendme version 0 on legacy circuit.");
+  } else if (!cell_version_can_be_handled(cell_version)) {
     goto invalid;
   }
 

@@ -86,6 +86,13 @@
  * that the resolver is wedged? */
 #define RESOLVE_MAX_TIMEOUT 300
 
+/** The clipped TTL sent back in the RESOLVED cell for every DNS queries.
+ *
+ * See https://gitlab.torproject.org/tpo/core/tor/-/issues/40979 for a thorough
+ * explanation but this is first and foremost a security fix in order to avoid
+ * an exit DNS cache oracle. */
+#define RESOLVED_CLIPPED_TTL (60)
+
 /** Our evdns_base; this structure handles all our name lookups. */
 static struct evdns_base *the_evdns_base = NULL;
 
@@ -512,10 +519,9 @@ send_resolved_cell,(edge_connection_t *conn, uint8_t answer_type,
   // generate a too-big message.)
   char buf[RELAY_PAYLOAD_SIZE_MIN], *cp = buf;
   size_t buflen = 0;
-  uint32_t ttl;
+  uint32_t ttl = RESOLVED_CLIPPED_TTL;
 
   buf[0] = answer_type;
-  ttl = conn->address_ttl;
 
   switch (answer_type)
     {
@@ -585,7 +591,7 @@ send_resolved_hostname_cell,(edge_connection_t *conn,
 {
   char buf[RELAY_PAYLOAD_SIZE_MAX];
   size_t buflen;
-  uint32_t ttl;
+  uint32_t ttl = RESOLVED_CLIPPED_TTL;
 
   if (BUG(!hostname))
     return;
@@ -595,7 +601,6 @@ send_resolved_hostname_cell,(edge_connection_t *conn,
   if (BUG(namelen >= 256)) {
     return;
   }
-  ttl = conn->address_ttl;
 
   buf[0] = RESOLVED_TYPE_HOSTNAME;
   buf[1] = (uint8_t)namelen;

@@ -2877,7 +2877,7 @@ test_util_decompress_dos_impl(compress_method_t method)
   int r;
 
   const size_t big = 5*1024*1024;
-  /* one megabyte of 0s. */
+  /* five megabytes of 0s. */
   input = tor_malloc_zero(big);
 
   /* Compress it into "result": it should fail. */
@@ -2952,7 +2952,7 @@ test_util_gzip_compression_bomb(void *arg)
   teardown_capture_of_logs();
 
   /* Here's a compression bomb that we made manually. */
-  #include "compression_bomb.h"
+  #include "test/compression_bomb.h"
 
   tt_int_op(-1, OP_EQ, tor_uncompress(&result, &result_len,
                                       compression_bomb_gzip,

@@ -493,7 +493,9 @@ proxy_needs_restart(const managed_proxy_t *mp)
      launched: */
 
   tor_assert(smartlist_len(mp->transports_to_launch) > 0);
-  tor_assert(mp->conf_state == PT_PROTO_COMPLETED);
+  if (BUG(mp->conf_state != PT_PROTO_COMPLETED)) {
+    goto needs_restart;
+  }
 
   if (smartlist_len(mp->transports_to_launch) != smartlist_len(mp->transports))
     goto needs_restart;

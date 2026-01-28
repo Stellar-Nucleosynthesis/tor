@@ -90,6 +90,7 @@
  **/
 
 #include "lib/string/printf.h"
+#include "lib/evloop/compat_libevent.h"
 #define PT_PRIVATE
 #include "core/or/or.h"
 #include "feature/client/bridges.h"
@@ -492,7 +493,9 @@ proxy_needs_restart(const managed_proxy_t *mp)
      launched: */
 
   tor_assert(smartlist_len(mp->transports_to_launch) > 0);
-  tor_assert(mp->conf_state == PT_PROTO_COMPLETED);
+  if (BUG(mp->conf_state != PT_PROTO_COMPLETED)) {
+    goto needs_restart;
+  }
 
   if (smartlist_len(mp->transports_to_launch) != smartlist_len(mp->transports))
     goto needs_restart;
@@ -517,7 +520,12 @@ proxy_prepare_for_restart(managed_proxy_t *mp)
 {
   transport_t *t_tmp = NULL;
 
-  tor_assert(mp->conf_state == PT_PROTO_COMPLETED);
+  /* Rate limit this log as a regurlarly dying PT would log this once every
+   * second (retry time). Every 5 minutes is likely loud enough to notice. */
+  static ratelim_t log_died_lim = RATELIM_INIT(300);
+  log_fn_ratelim(&log_died_lim, LOG_WARN, LD_PT,
+                 "Managed proxy at '%s' died in state %s", mp->argv[0],
+                 managed_proxy_state_to_string(mp->conf_state));
 
   /* destroy the process handle and terminate the process. */
   if (mp->process) {
@@ -543,9 +551,11 @@ proxy_prepare_for_restart(managed_proxy_t *mp)
   mp->proxy_uri = get_pt_proxy_uri();
   mp->proxy_supported = 0;
 
+  if (mp->conf_state == PT_PROTO_COMPLETED)
+    unconfigured_proxies_n++;
+
   /* flag it as an infant proxy so that it gets launched on next tick */
   managed_proxy_set_state(mp, PT_PROTO_INFANT);
-  unconfigured_proxies_n++;
 }
 
 /** Launch managed proxy <b>mp</b>. */
@@ -643,6 +653,23 @@ pt_configure_remaining_proxies(void)
     mark_my_descriptor_dirty("configured managed proxies");
 }
 
+/** event callback to launch managed proxy after a delay */
+STATIC void
+launch_proxy_ev(mainloop_event_t *event, void *v)
+{
+  managed_proxy_t *mp = v;
+
+  (void) event;
+
+  tor_assert(mp);
+  tor_assert(mp->conf_state == PT_PROTO_WAITING);
+
+  if (launch_managed_proxy(mp) < 0) { /* launch fail */
+    managed_proxy_set_state(mp, PT_PROTO_FAILED_LAUNCH);
+    handle_finished_proxy(mp);
+  }
+}
+
 /** Attempt to continue configuring managed proxy <b>mp</b>.
  *  Return 1 if the transport configuration finished, and return 0
  *  otherwise (if we still have more configuring to do for this
@@ -652,10 +679,13 @@ configure_proxy(managed_proxy_t *mp)
 {
   /* if we haven't launched the proxy yet, do it now */
   if (mp->conf_state == PT_PROTO_INFANT) {
-    if (launch_managed_proxy(mp) < 0) { /* launch fail */
-      managed_proxy_set_state(mp, PT_PROTO_FAILED_LAUNCH);
-      handle_finished_proxy(mp);
+    const struct timeval delay_tv = { 1, 0 };
+    if (!mp->process_launch_ev) {
+      mp->process_launch_ev = mainloop_event_new(launch_proxy_ev, mp);
     }
+    mainloop_event_schedule(mp->process_launch_ev, &delay_tv);
+    managed_proxy_set_state(mp, PT_PROTO_WAITING);
+
     return 0;
   }
 
@@ -756,6 +786,9 @@ managed_proxy_destroy(managed_proxy_t *mp,
     process_terminate(mp->process);
   }
 
+  if (mp->process_launch_ev)
+    mainloop_event_free(mp->process_launch_ev);
+
   tor_free(mp);
 }
 
@@ -828,6 +861,7 @@ handle_finished_proxy(managed_proxy_t *mp)
     managed_proxy_set_state(mp, PT_PROTO_COMPLETED);
     break;
   case PT_PROTO_INFANT:
+  case PT_PROTO_WAITING:
   case PT_PROTO_LAUNCHED:
   case PT_PROTO_ACCEPTING_METHODS:
   case PT_PROTO_COMPLETED:
@@ -2205,6 +2239,8 @@ managed_proxy_state_to_string(enum pt_proto_state state)
   switch (state) {
   case PT_PROTO_INFANT:
     return "Infant";
+  case PT_PROTO_WAITING:
+    return "Waiting";
   case PT_PROTO_LAUNCHED:
     return "Launched";
   case PT_PROTO_ACCEPTING_METHODS:

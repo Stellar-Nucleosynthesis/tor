@@ -662,7 +662,9 @@ launch_proxy_ev(mainloop_event_t *event, void *v)
   (void) event;
 
   tor_assert(mp);
-  tor_assert(mp->conf_state == PT_PROTO_WAITING);
+  if (BUG(mp->conf_state != PT_PROTO_WAITING)) {
+    return;
+  }
 
   if (launch_managed_proxy(mp) < 0) { /* launch fail */
     managed_proxy_set_state(mp, PT_PROTO_FAILED_LAUNCH);

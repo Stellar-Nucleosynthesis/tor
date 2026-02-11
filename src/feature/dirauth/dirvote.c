@@ -2383,7 +2383,7 @@ networkstatus_compute_consensus(smartlist_t *votes,
    * module. */
   {
     char *unsigned_consensus = smartlist_join_strings(chunks, "", 0, NULL);
-    char *filename;
+    char *filename = NULL;
     tor_asprintf(&filename, "my-consensus-%s", flavor_name);
     char *fpath = get_datadir_fname(filename);
     write_str_to_file(fpath, unsigned_consensus, 0);
@@ -3579,7 +3579,7 @@ dirvote_compute_consensuses(void)
 static void
 export_consensus_for_transparency(const char *flavor_name)
 {
-  char *filename;
+  char *filename = NULL;
   tor_asprintf(&filename, "my-consensus-%s", flavor_name);
   char *fpath_from = get_datadir_fname(filename);
   tor_free(filename);

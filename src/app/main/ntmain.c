@@ -66,7 +66,7 @@ static int nt_service_cmd_stop(void);
 
 /** Struct to hold dynamically loaded NT-service related function pointers.
  */
-struct {
+typedef struct nt_services {
   int loaded;
 
   /** @{ */
@@ -143,7 +143,9 @@ struct {
                              LPDWORD cchReferencedDomainName,
                              PSID_NAME_USE peUse);
   /** @} */
-} service_fns = { 0,
+} nt_services_t;
+
+static nt_services_t service_fns = { 0,
                   NULL, NULL, NULL, NULL, NULL, NULL,
                   NULL, NULL, NULL, NULL, NULL, NULL,
                   NULL};

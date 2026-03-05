@@ -1718,6 +1718,19 @@ control_event_my_descriptor_changed(void)
   return 0;
 }
 
+/** Global circuit ID was updated; notify any controller that cares.
+ */
+void control_event_circ_research_id(circuit_t *circ)
+{
+  if (!EVENT_IS_INTERESTING(EVENT_CIRCUIT_STATUS))
+    return;
+
+  send_control_event(EVENT_CIRCUIT_STATUS,
+      "650 CIRC_RESEARCH_ID LocalCircID=%u ResearchID=%016" PRIx64 "\r\n",
+      (unsigned)circ->n_circ_id,
+      circ->research_id);
+}
+
 /** Helper: sends a status event where <b>type</b> is one of
  * EVENT_STATUS_{GENERAL,CLIENT,SERVER}, where <b>severity</b> is one of
  * LOG_{NOTICE,WARN,ERR}, and where <b>format</b> is a printf-style format

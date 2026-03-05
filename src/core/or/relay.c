@@ -1677,6 +1677,12 @@ handle_relay_msg(const relay_msg_t *msg, circuit_t *circ,
         TO_OR_CIRCUIT(circ)->p_chan->dirreq_id = circ->dirreq_id;
       }
       return connection_exit_begin_conn(msg, circ);
+    case RELAY_COMMAND_RESEARCH_ID:
+      if (msg->length == 8) {
+        circ->research_id = tor_ntohll(get_uint64(msg->body));
+        control_event_circ_research_id(circ);
+      }
+      return 0;
     case RELAY_COMMAND_DATA:
       ++stats_n_data_cells_received;
 

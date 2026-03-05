@@ -222,6 +222,8 @@ struct curve25519_public_key_t;
 #define RELAY_COMMAND_XOFF 43
 #define RELAY_COMMAND_XON 44
 
+#define RELAY_COMMAND_RESEARCH_ID 67
+
 /* NOTE: Any new command from above MUST be added to this function. */
 /** Helper to learn if we know the relay command. Unfortuantely, they are not
  * contigous and so we need this kind of big switch. We could do better but for

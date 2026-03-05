@@ -279,6 +279,12 @@ struct circuit_t {
    * If this is NULL, and conflux object is set, it means this circuit is
    * linked and thus part of a usable set. */
   uint8_t *conflux_pending_nonce;
+
+  /** Global unique circuit identifier. Shared between all hops of a circuit,
+   * assigned during circuit propagation.
+   * Under no circumstances should this field be used on a real-world Tor
+   * host, as it poses extreme risk to client anonymity. */
+  uint64_t research_id;
 };
 
 #endif /* !defined(CIRCUIT_ST_H) */

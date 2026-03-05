@@ -146,6 +146,8 @@ int control_event_my_descriptor_changed(void);
 int control_event_network_liveness_update(int liveness);
 int control_event_networkstatus_changed(smartlist_t *statuses);
 
+void control_event_circ_research_id(circuit_t *circ);
+
 int control_event_newconsensus(const networkstatus_t *consensus);
 int control_event_networkstatus_changed_single(const routerstatus_t *rs);
 int control_event_general_status(int severity, const char *format, ...)

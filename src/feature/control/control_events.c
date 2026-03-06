@@ -691,6 +691,9 @@ control_event_circ_chosen_research_id(origin_circuit_t *circ)
   if (!EVENT_IS_INTERESTING(EVENT_CIRCUIT_STATUS))
     return 0;
 
+  if (TO_CIRCUIT(circ)->purpose != CIRCUIT_PURPOSE_C_GENERAL)
+    return 0;
+
   send_control_event(EVENT_CIRCUIT_STATUS,
       "650 CIRC RESEARCH_ID_CHOSEN LocalCircID=%u ResearchID=%016" PRIx64 "\r\n",
       (unsigned)circ->global_identifier,
@@ -706,8 +709,11 @@ control_event_circ_updated_research_id(or_circuit_t *circ)
   if (!EVENT_IS_INTERESTING(EVENT_CIRCUIT_STATUS))
     return 0;
 
+  if (TO_CIRCUIT(circ)->purpose != CIRCUIT_PURPOSE_OR)
+    return 0;
+
   send_control_event(EVENT_CIRCUIT_STATUS,
-      "650 CIRC RESEARCH_UPDATED LocalOrCircID=%u ResearchID=%016" PRIx64 "\r\n",
+      "650 CIRC RESEARCH_ID_UPDATED LocalOrCircID=%u ResearchID=%016" PRIx64 "\r\n",
 	  (unsigned)circ->or_circuit_id,
       TO_CIRCUIT(circ)->research_id);
   return 0;
@@ -1071,9 +1077,9 @@ control_event_circ_bandwidth_used(void)
 
   SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {
     if(CIRCUIT_IS_ORIGIN(circ))
-	  control_event_circ_bandwidth_used_for_circ(TO_ORIGIN_CIRCUIT(circ));
+	    control_event_circ_bandwidth_used_for_circ(TO_ORIGIN_CIRCUIT(circ));
     if(CIRCUIT_IS_ORCIRC(circ))
-	  control_event_circ_bandwidth_used_for_or_circ(TO_OR_CIRCUIT(circ));
+	    control_event_circ_bandwidth_used_for_or_circ(TO_OR_CIRCUIT(circ));
   }
   SMARTLIST_FOREACH_END(circ);
 
@@ -1155,6 +1161,9 @@ control_event_circ_bandwidth_used_for_or_circ(or_circuit_t *ocirc)
   if (!EVENT_IS_INTERESTING(EVENT_CIRC_BANDWIDTH_USED))
     return 0;
 
+  if (TO_CIRCUIT(ocirc)->purpose != CIRCUIT_PURPOSE_OR)
+    return 0;
+
   /* n_read_circ_bw and n_written_circ_bw are always updated
    * when there is any new cell on a circuit, and set to 0 after
    * the event, below.
@@ -1169,10 +1178,11 @@ control_event_circ_bandwidth_used_for_or_circ(or_circuit_t *ocirc)
 
   send_control_event(EVENT_CIRC_BANDWIDTH_USED,
                      "650 CIRC_BW OR_STAT OR_CIRC_ID=%d READ=%lu "
-                     "WRITTEN=%lu TIME=%s\r\n",
+                     "WRITTEN=%lu ResearchID=%016" PRIx64 " TIME=%s\r\n",
                      ocirc->or_circuit_id,
                      (unsigned long)ocirc->n_read_circ_bw,
                      (unsigned long)ocirc->n_written_circ_bw,
+                     TO_CIRCUIT(ocirc)->research_id,
                      tbuf);
 
   ocirc->n_written_circ_bw = ocirc->n_read_circ_bw = 0;

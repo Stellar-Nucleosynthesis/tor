@@ -1359,7 +1359,8 @@ circuit_finish_handshake(origin_circuit_t *circ,
   circuit_log_path(LOG_INFO,LD_CIRC,circ);
   circuit_event_status(circ, CIRC_EVENT_EXTENDED, 0);
 
-  circuit_hop_update_research_id(circ, hop);
+  if (TO_CIRCUIT(circ)->purpose == CIRCUIT_PURPOSE_C_GENERAL)
+    circuit_hop_update_research_id(circ, hop);
 
   return 0;
 }

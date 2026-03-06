@@ -20,7 +20,7 @@ char *circuit_list_path(origin_circuit_t *circ, int verbose);
 char *circuit_list_path_for_controller(origin_circuit_t *circ);
 void circuit_log_path(int severity, unsigned int domain,
                       origin_circuit_t *circ);
-void circuit_announce_research_id(origin_circuit_t *circ,
+void circuit_hop_update_research_id(origin_circuit_t *circ,
                                   crypt_path_t *target_hop);
 origin_circuit_t *origin_circuit_init(uint8_t purpose, int flags);
 origin_circuit_t *circuit_establish_circuit(uint8_t purpose,

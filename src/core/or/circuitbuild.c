@@ -365,13 +365,13 @@ circuit_log_path(int severity, unsigned int domain, origin_circuit_t *circ)
 /**
  * Inform the target hop about the global circuit ID.
  */
-void circuit_announce_research_id(origin_circuit_t *circ,
+void circuit_hop_update_research_id(origin_circuit_t *circ,
                                   crypt_path_t *target_hop)
 {
   uint8_t payload[8];
-  set_uint64(payload, tor_htonll(circ->base_.research_id));
+  set_uint64(payload, tor_htonll(TO_CIRCUIT(circ)->research_id));
   relay_send_command_from_edge(0, TO_CIRCUIT(circ),
-                                   RELAY_COMMAND_RESEARCH_ID,
+                                   RELAY_COMMAND_UPDATE_RESEARCH_ID,
                                    (const char *)payload, 8,
                                    target_hop);
 }
@@ -478,7 +478,8 @@ origin_circuit_init(uint8_t purpose, int flags)
   circ->build_state->need_conflux =
     ((flags & CIRCLAUNCH_NEED_CONFLUX) ? 1 : 0);
   circ->base_.purpose = purpose;
-  circ->research_id = crypto_rand_uint64(UINT64_MAX);
+  TO_CIRCUIT(circ)->research_id = crypto_rand_uint64(UINT64_MAX - 1) + 1;
+  control_event_circ_chosen_research_id(circ);
   return circ;
 }
 
@@ -1353,12 +1354,12 @@ circuit_finish_handshake(origin_circuit_t *circ,
     }
   }
 
-  circuit_announce_research_id(circ, hop);
-
   hop->state = CPATH_STATE_OPEN;
   log_info(LD_CIRC,"Finished building circuit hop:");
   circuit_log_path(LOG_INFO,LD_CIRC,circ);
   circuit_event_status(circ, CIRC_EVENT_EXTENDED, 0);
+
+  circuit_hop_update_research_id(circ, hop);
 
   return 0;
 }

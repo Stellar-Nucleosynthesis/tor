@@ -115,6 +115,15 @@ struct or_circuit_t {
   /** Format to use when exchanging relay cells with the client
    * who built this circuit. */
   relay_cell_fmt_t relay_cell_format;
+
+ /** Bytes read/written on this circuit since last bandwidth event.
+ * Used to emit CIRC_BW events from relay nodes for research purposes. */
+ uint32_t n_read_circ_bw;
+ uint32_t n_written_circ_bw;
+
+ /** Quasi-global identifier for this circuit. */
+ /* This can get re-used after 2**32 circuits. */
+ uint32_t or_circuit_id;
 };
 
 #endif /* !defined(OR_CIRCUIT_ST_H) */

@@ -1677,10 +1677,10 @@ handle_relay_msg(const relay_msg_t *msg, circuit_t *circ,
         TO_OR_CIRCUIT(circ)->p_chan->dirreq_id = circ->dirreq_id;
       }
       return connection_exit_begin_conn(msg, circ);
-    case RELAY_COMMAND_RESEARCH_ID:
+    case RELAY_COMMAND_UPDATE_RESEARCH_ID:
       if (msg->length == 8) {
         circ->research_id = tor_ntohll(get_uint64(msg->body));
-        control_event_circ_research_id(circ);
+        control_event_circ_updated_research_id(TO_OR_CIRCUIT(circ));
       }
       return 0;
     case RELAY_COMMAND_DATA:
@@ -3373,6 +3373,16 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   }
 
   exitward = (direction == CELL_DIRECTION_OUT);
+
+  if (CIRCUIT_IS_ORCIRC(circ)) {
+    orcirc = TO_OR_CIRCUIT(circ);
+    if (exitward) {
+      orcirc->n_read_circ_bw += CELL_PAYLOAD_SIZE;
+    } else {
+      orcirc->n_written_circ_bw += CELL_PAYLOAD_SIZE;
+    }
+  }
+
   if (exitward) {
     queue = &circ->n_chan_cells;
     circ_blocked = circ->circuit_blocked_on_n_chan;
@@ -3388,8 +3398,6 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   }
 
   if (PREDICT_UNLIKELY(queue->n >= max_queue_size)) {
-    /* This DoS defense only applies at the Guard as in the p_chan is likely
-     * a client IP attacking the network. */
     if (exitward && CIRCUIT_IS_ORCIRC(circ)) {
       stats_n_circ_max_cell_outq_reached++;
       dos_note_circ_max_outq(CONST_TO_OR_CIRCUIT(circ)->p_chan);

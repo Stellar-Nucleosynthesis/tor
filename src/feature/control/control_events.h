@@ -117,6 +117,8 @@ int control_any_per_second_event_enabled(void);
 
 int control_event_circuit_status(origin_circuit_t *circ,
                                  circuit_status_event_t e, int reason);
+int control_event_circ_chosen_research_id(origin_circuit_t *circ);
+int control_event_circ_updated_research_id(or_circuit_t *circ);
 int control_event_circuit_purpose_changed(origin_circuit_t *circ,
                                           int old_purpose);
 int control_event_circuit_cannibalized(origin_circuit_t *circ,
@@ -132,6 +134,7 @@ int control_event_stream_bandwidth(edge_connection_t *edge_conn);
 int control_event_stream_bandwidth_used(void);
 int control_event_circ_bandwidth_used(void);
 int control_event_circ_bandwidth_used_for_circ(origin_circuit_t *ocirc);
+int control_event_circ_bandwidth_used_for_or_circ(or_circuit_t *ocirc);
 int control_event_conn_bandwidth(connection_t *conn);
 int control_event_conn_bandwidth_used(void);
 int control_event_circuit_cell_stats(void);
@@ -145,8 +148,6 @@ int control_event_address_mapped(const char *from, const char *to,
 int control_event_my_descriptor_changed(void);
 int control_event_network_liveness_update(int liveness);
 int control_event_networkstatus_changed(smartlist_t *statuses);
-
-void control_event_circ_research_id(circuit_t *circ);
 
 int control_event_newconsensus(const networkstatus_t *consensus);
 int control_event_networkstatus_changed_single(const routerstatus_t *rs);

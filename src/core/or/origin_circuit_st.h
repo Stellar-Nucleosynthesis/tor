@@ -310,12 +310,6 @@ struct origin_circuit_t {
    * to 2*CircuitsAvailableTimoeut. */
   int circuit_idle_timeout;
 
-  /** Global unique circuit identifier. Shared between all hops of a circuit,
-   * assigned during circuit propagation.
-   * Under no circumstances should this field be used on a real-world Tor
-   * host, as it poses extreme risk to client anonymity. */
-  uint64_t research_id;
-
 };
 
 #endif /* !defined(ORIGIN_CIRCUIT_ST_H) */

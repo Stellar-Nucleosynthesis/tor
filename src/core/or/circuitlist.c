@@ -1127,6 +1127,8 @@ or_circuit_new(circid_t p_circ_id, channel_t *p_chan)
 
   circ = tor_malloc_zero(sizeof(or_circuit_t));
   circ->base_.magic = OR_CIRCUIT_MAGIC;
+  static uint32_t next_or_circuit_id = 1;
+  circ->or_circuit_id = next_or_circuit_id++;
 
   if (p_chan)
     circuit_set_p_circid_chan(circ, p_circ_id, p_chan);

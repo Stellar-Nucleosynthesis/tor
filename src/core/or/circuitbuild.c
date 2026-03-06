@@ -368,6 +368,9 @@ circuit_log_path(int severity, unsigned int domain, origin_circuit_t *circ)
 void circuit_hop_update_research_id(origin_circuit_t *circ,
                                   crypt_path_t *target_hop)
 {
+  tor_assert(circ);
+  tor_assert(target_hop);
+
   uint8_t payload[8];
   set_uint64(payload, tor_htonll(TO_CIRCUIT(circ)->research_id));
   relay_send_command_from_edge(0, TO_CIRCUIT(circ),
@@ -993,7 +996,15 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
 
   /* Case three: the circuit is finished. Do housekeeping tasks on it. */
   circpad_machine_event_circ_built(circ);
-  return circuit_build_no_more_hops(circ);
+  int res = circuit_build_no_more_hops(circ);
+  if (res == 0 && TO_CIRCUIT(circ)->purpose == CIRCUIT_PURPOSE_C_GENERAL) {
+    crypt_path_t *curr_hop = circ->cpath;
+    do {
+      circuit_hop_update_research_id(circ, curr_hop);
+      curr_hop = curr_hop->next;
+    } while (curr_hop != circ->cpath);
+  }
+  return res;
 }
 
 /**
@@ -1358,9 +1369,6 @@ circuit_finish_handshake(origin_circuit_t *circ,
   log_info(LD_CIRC,"Finished building circuit hop:");
   circuit_log_path(LOG_INFO,LD_CIRC,circ);
   circuit_event_status(circ, CIRC_EVENT_EXTENDED, 0);
-
-  if (TO_CIRCUIT(circ)->purpose == CIRCUIT_PURPOSE_C_GENERAL)
-    circuit_hop_update_research_id(circ, hop);
 
   return 0;
 }

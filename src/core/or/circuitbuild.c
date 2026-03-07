@@ -997,7 +997,7 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
   /* Case three: the circuit is finished. Do housekeeping tasks on it. */
   circpad_machine_event_circ_built(circ);
   int res = circuit_build_no_more_hops(circ);
-  if (res == 0 && TO_CIRCUIT(circ)->purpose == CIRCUIT_PURPOSE_C_GENERAL) {
+  if (res == 0) {
     crypt_path_t *curr_hop = circ->cpath;
     do {
       circuit_hop_update_research_id(circ, curr_hop);

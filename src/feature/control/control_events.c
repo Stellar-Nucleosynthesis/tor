@@ -691,9 +691,6 @@ control_event_circ_chosen_research_id(origin_circuit_t *circ)
   if (!EVENT_IS_INTERESTING(EVENT_CIRCUIT_STATUS))
     return 0;
 
-  if (TO_CIRCUIT(circ)->purpose != CIRCUIT_PURPOSE_C_GENERAL)
-    return 0;
-
   send_control_event(EVENT_CIRCUIT_STATUS,
       "650 CIRC RESEARCH_ID_CHOSEN LocalCircID=%u ResearchID=%016" PRIx64 "\r\n",
       (unsigned)circ->global_identifier,
@@ -707,9 +704,6 @@ int
 control_event_circ_updated_research_id(or_circuit_t *circ)
 {
   if (!EVENT_IS_INTERESTING(EVENT_CIRCUIT_STATUS))
-    return 0;
-
-  if (TO_CIRCUIT(circ)->purpose != CIRCUIT_PURPOSE_OR)
     return 0;
 
   send_control_event(EVENT_CIRCUIT_STATUS,
@@ -1159,9 +1153,6 @@ control_event_circ_bandwidth_used_for_or_circ(or_circuit_t *ocirc)
   tor_assert(ocirc);
 
   if (!EVENT_IS_INTERESTING(EVENT_CIRC_BANDWIDTH_USED))
-    return 0;
-
-  if (TO_CIRCUIT(ocirc)->purpose != CIRCUIT_PURPOSE_OR)
     return 0;
 
   /* n_read_circ_bw and n_written_circ_bw are always updated
